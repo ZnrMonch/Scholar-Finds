@@ -953,20 +953,27 @@ div#other-inputs > span#oi-one {
     gap: 5px;
 }
 
+div#other-inputs > span#oi-two {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
 p.smalldesc {
     font-size: 10px;
     opacity: 50%;
     user-select: none;
 }
 
-div#other-inputs > span#oi-three {
+div#other-inputs > span#oi-four {
     width: 100%;
     display: grid;
     grid-template-columns: .65fr 1.35fr;
     align-items: center;
 }
 
-div#other-inputs > span#oi-two {
+div#other-inputs > span#oi-three {
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -1150,7 +1157,7 @@ div.libcontainer {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 900px;
+    width: 1000px;
     height: 800px;
     background: var(--bg2);
     border-radius: 15px;
@@ -1252,11 +1259,11 @@ div#ref-box {
     outline: none;
     font-family: 'Times New Roman', Times, serif !important;
     text-indent: -20px;
-    overflow-wrap: break-word; /* Ensures long words break to the next line */
-    word-wrap: break-word; /* Alternative for compatibility */
-    overflow: hidden; /* Prevents overflowing content */
-    text-overflow: ellipsis; /* Adds "..." for clipped content if necessary */
-    box-sizing: border-box; /* Ensures padding is included in the width and height */
+    overflow-wrap: break-word;
+    word-wrap: break-word; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
 }
 
 button.copy-ref {
