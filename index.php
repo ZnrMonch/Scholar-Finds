@@ -1,3 +1,6 @@
+<?php
+    include 'cryption.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +11,7 @@
     <link rel="stylesheet" href="style.css">
     
 </head>
-<body class="contactb">
+<body>
     <header>
         <div id="logos">
             <img src="resources/umak-logo.png" alt="umak-logo" class="logo">
@@ -16,9 +19,9 @@
             <h1>Scholar Finds</h1>
         </div>
         <nav>
-            <a href="index.html">Home</a>
-            <a href="about.html">About</a>
-            <a href="contact.html">Contact</a>
+            <a href="index.php">Home</a>
+            <a href="about.php">About</a>
+            <a href="contact.php">Contact</a>
             <a href="library.php">Library</a>
             <div id="profile">
                 <button id="menu-button" class="inv" onclick="toggleMenu()"><img src="resources/user.png" alt="profile-picture" class="profile-picture"></button>
@@ -28,7 +31,7 @@
                         <img src="resources/user.png" alt="profile-picture" class="profile-picture">
                         <p>
                             <!-- UN > Username | UE > User Email -->
-                            <span id="un">Not Signed In</span>
+                            <span id="un"><?php echo isset($_COOKIE['current_user']) ? str_replace("@umak.edu.ph", "", decrypt($_COOKIE['current_user'])) : "Not Signed In";?></span>
                             <!-- <span id="ue">Guest</span> -->
                         </p>
                     </div>
@@ -49,12 +52,30 @@
                     </div>
                     <hr>
                     <div id="log">
-                        <a href="access.php">
-                            <button class="inv in">
-                                <span class="material-symbols-outlined">login</span>
-                                <p>Log In</p>
-                            </button>
-                        </a>
+                        <?php 
+                            if (isset($_COOKIE["current_user"])) {
+                                echo "
+                                <form method='post' action=''>
+                                    <button class='inv out' name='logout'>
+                                        <span class='material-symbols-outlined'>logout</span>
+                                        <p>Log Out</p>
+                                    </button>
+                                </form>";
+                                if (isset($_POST['logout'])) {
+                                    setcookie("current_user", "", time() - 3600, "/");
+                                    header("Location: index.php");
+                                    exit();
+                                }
+                            } else {
+                                echo "
+                                <a href='access.php'>
+                                    <button class='inv in'>
+                                        <span class='material-symbols-outlined'>login</span>
+                                        <p>Log In</p>
+                                    </button>
+                                </a>";
+                            }
+                        ?>
                     </div>
                 </div>
                 <script>
@@ -66,41 +87,15 @@
             </div>
         </nav>
     </header>
-    <div class="contact">
-        <div class="content">
-            <h1>Contact Us</h1>
+    <main id="home">
+        <div class="hero">
+            <h2 id="ccis">College of Computing and Information Sciences</h2>
+            <h1 id="sf">Scholar Finds</h1>
         </div>
+        <div class="description">
+            <p id="overview">
+                The Scholar Finds brings valuable improvements to the thesis process, benefiting students, faculty, and administrators alike. By promoting efficiency, security, organization, and user-centric design, it empowers academic institutions to manage thesis submissions more effectively while providing a smoother, more productive experience for all users.                </p>
         </div>
-        <div class="contacts">
-            <div class="contact-item">
-                <img src="resources/ccis-logo.png" alt="office-contact" class="contact-picture">
-                <div class="contact-info">
-                    <h2>COLLEGE OF COMPUTING INFORMATION SCIENCES</h2><br>
-                    <span class="info">
-                        <span class="material-symbols-outlined">map</span>
-                        <p>3rd floor, Administrative Building, University of Makati, JP Rizal Ext., West Rembo, Makati City</p>
-                    </span>
-                    <span class="info">
-                        <span class="material-symbols-outlined">mail</span>
-                        <p>ccis@umak.edu.ph</p>
-                    </span>
-                </div>
-            </div>
-            <div class="contact-item">
-                <img src="resources/dev-contact.png" alt="developer-contact" class="contact-picture">
-                <div class="contact-info">
-                    <h2>RENZJAN MONCINILLA (Administrator)</h2><br>
-                    <span class="info">
-                        <span class="material-symbols-outlined">public</span>
-                        <p>fb.com/renzjan.moncinilla</p>
-                    </span>
-                    <span class="info">
-                        <span class="material-symbols-outlined">mail</span>
-                        <p>renzjan.moncinilla@umak.edu.ph</p>
-                    </span>
-                </div>
-            </div>
-        </div>
-        </div>x
+    </main>
 </body>
 </html>

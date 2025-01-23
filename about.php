@@ -1,3 +1,6 @@
+<?php
+    include 'cryption.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,9 +18,9 @@
             <h1>Scholar Finds</h1>
         </div>
         <nav>
-            <a href="index.html">Home</a>
-            <a href="about.html">About</a>
-            <a href="contact.html">Contact</a>
+            <a href="index.php">Home</a>
+            <a href="about.php">About</a>
+            <a href="contact.php">Contact</a>
             <a href="library.php">Library</a>
             <div id="profile">
                 <button id="menu-button" class="inv" onclick="toggleMenu()"><img src="resources/user.png" alt="profile-picture" class="profile-picture"></button>
@@ -27,7 +30,7 @@
                         <img src="resources/user.png" alt="profile-picture" class="profile-picture">
                         <p>
                             <!-- UN > Username | UE > User Email -->
-                            <span id="un">Not Signed In</span>
+                            <span id="un"><?php echo isset($_COOKIE['current_user']) ? str_replace("@umak.edu.ph", "", decrypt($_COOKIE['current_user'])) : "Not Signed In";?></span>
                             <!-- <span id="ue">Guest</span> -->
                         </p>
                     </div>
@@ -48,12 +51,30 @@
                     </div>
                     <hr>
                     <div id="log">
-                        <a href="access.php">
-                            <button class="inv in">
-                                <span class="material-symbols-outlined">login</span>
-                                <p>Log In</p>
-                            </button>
-                        </a>
+                        <?php 
+                            if (isset($_COOKIE["current_user"])) {
+                                echo "
+                                <form method='post' action=''>
+                                    <button class='inv out' name='logout'>
+                                        <span class='material-symbols-outlined'>logout</span>
+                                        <p>Log Out</p>
+                                    </button>
+                                </form>";
+                                if (isset($_POST['logout'])) {
+                                    setcookie("current_user", "", time() - 3600, "/");
+                                    header("Location: index.php");
+                                    exit();
+                                }
+                            } else {
+                                echo "
+                                <a href='access.php'>
+                                    <button class='inv in'>
+                                        <span class='material-symbols-outlined'>login</span>
+                                        <p>Log In</p>
+                                    </button>
+                                </a>";
+                            }
+                        ?>
                     </div>
                 </div>
                 <script>

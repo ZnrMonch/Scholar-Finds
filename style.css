@@ -110,6 +110,7 @@ br {
 }
 
 body {
+    position: relative;
     width: 100%;
     height: 100%;
     background-color: var(--bg);
@@ -240,7 +241,7 @@ div#menu-selections {
     justify-content: center;
 }
 
-#log > a > button {
+button.inv.in, button.inv.out {
     padding: 3px 20px;
     gap: 10px;
     border-radius: 5px;
@@ -248,8 +249,12 @@ div#menu-selections {
     color: var(--light-font);
 }
 
-#log > a > button.in {
+button.inv.in {
     background-color: var(--color);
+}
+
+button.inv.out {
+    background-color: #900603;
 }
 
 /* END OF THE HEADER */
@@ -622,11 +627,12 @@ span.info > span {
 
 /* ACCESS.PHP */
 main#access {
+    background: linear-gradient(to top, #ffffff, #cbf0cb);
     display: flex;
     align-items: center;
     justify-content: center;
 }
-
+    
 div#user-log {
     position: relative;
     width: 1000px;
@@ -1273,6 +1279,50 @@ button.copy-ref {
     opacity: 50%;
 }
 
+div.nmsg {
+    position: absolute;
+    left: 40vw;
+    top: 70px;
+    width: 500px;
+    height: 40px;
+    border: 1px solid var(--bgborder);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg2);
+    font-size: 1rem;
+    font-weight: 600;
+    opacity: 0;
+    animation: notification 5s ease-in-out;
+}
+
+div.nmsg.error {
+    background-color: #F8D7DA;
+    color: #721C24;
+}
+
+div.nmsg.success {
+    background-color: #D4EDDA;
+    color: #155724;
+}
+
+@keyframes notification {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    90% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+}
+
+/*
 div.notification {
     display: flex;
     align-items: center;
@@ -1321,3 +1371,5 @@ div.notification {
 .notification.success {
     background-color: #81C784;
 }
+
+*/

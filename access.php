@@ -1,72 +1,81 @@
 <?php
+    include 'cryption.php';
     $conn = new mysqli('localhost', 'root', '', 'scholar_finds');
     if ($conn->connect_error) {
         die("Database connection failed: " . $conn->connect_error);
-    } else {
-        logmsg("Database connection successful!");
     }
 
-    // regigas
+    // Registration
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['register'])) {
         $email = trim($_POST['remail']);
         $username = trim($_POST['rusername']);
         $password = trim($_POST['rpassword']);
 
-        // validation
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            logmsg("Invalid email format.");
-        } elseif (empty($email) || empty($username) || empty($password)) {
-            logmsg("Please fill in all fields.");
+        // Validation for empty fields
+        if (empty($email) || empty($username) || empty($password)) {
+            notify("Error: One or more fields are empty.");
+        } elseif (!str_ends_with($email, "@umak.edu.ph")) { // Validate email domain
+            notify("Error: Invalid UMak email account.");
+        } elseif (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,30}$/', $password)) { // Validate password
+            notify("Error: Invalid password pattern.");
         } else {
-            logmsg("Email: $email, Username: $username, Password: $password");
+            $stmt = $conn->prepare("SELECT email FROM user_info WHERE email = ?");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $stmt->store_result();
 
-            $stmt = $conn->prepare("INSERT INTO user_info (email, username, password) VALUES (?, ?, ?)");
-            $stmt->bind_param("sss", $email, $username, $password); 
+            if ($stmt->num_rows > 0) { // Email exists
+                notify("Error: Email already exists.");
+            } else { // Register new user
+                $stmt->close();
+                $stmt = $conn->prepare("INSERT INTO user_info (email, username, password) VALUES (?, ?, ?)");
+                $stmt->bind_param("sss", $email, $username, $password); // Store plain text password
 
-            if ($stmt->execute()) {
-                logmsg("Registration successful!");
-            } else {
-                logmsg("Error executing query: " . $stmt->error);
+                if ($stmt->execute()) {
+                    notify("Success: Registration successful!");
+                    setcookie("current_user", encrypt($email), time() + (86400 * 0.5), "/");
+                } else {
+                    notify("Error: Executing query failed.");
+                }
             }
-
             $stmt->close();
         }
     }
 
-    // login
+    // Login
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
         $email = trim($_POST['lemail']);
         $password = trim($_POST['lpassword']);
 
-        $stmt = $conn->prepare("SELECT password FROM user_info WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $stmt->store_result();
-
-        if ($stmt->num_rows > 0) {
-            $stmt->bind_result($stored_password);
-            $stmt->fetch();
-
-            if ($password === $stored_password) {
-                logmsg("Login successful.");
-                $_SESSION['email'] = $email; 
-                header("Location: library.php"); 
-                exit();
-            } else {
-                logmsg("Invalid password.");
-            }
+        // Validation for empty fields
+        if (empty($email) || empty($password)) {
+            notify("Error: One or more fields are empty.");
         } else {
-            logmsg("Email not found.");
-        }
+            $stmt = $conn->prepare("SELECT email, password FROM user_info WHERE email = ?");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $stmt->store_result();
 
-        $stmt->close();
+            if ($stmt->num_rows > 0) { // Email exists
+                $stmt->bind_result($stored_email, $stored_password);
+                $stmt->fetch();
+
+                if ($password === $stored_password) { // Compare plain text passwords
+                    notify("Success: Login successful!");
+                    setcookie("current_user", encrypt($email), time() + (3 * 3600), "/"); // Store encrypted email in cookie for 3 hours
+                    header("Location: library.php");
+                    exit();
+                } else {
+                    notify("Error: Invalid password.");
+                }
+            } else { // Email does not exist
+                notify("Error: No existing email.");
+            }
+            $stmt->close();
+        }
     }
 
     $conn->close();
-
-    function logmsg($message) {
-    echo "<script>console.log('" . addslashes($message) . "');</script>";
-    }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -77,7 +86,7 @@
     <link rel="shortcut icon" href="resources/ccis-logo.png" type="image/x-icon">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="accessb">
     <header>
         <div id="logos">
             <img src="resources/umak-logo.png" alt="umak-logo" class="logo">
@@ -85,9 +94,9 @@
             <h1>Scholar Finds</h1>
         </div>
         <nav>
-            <a href="index.html">Home</a>
-            <a href="about.html">About</a>
-            <a href="contact.html">Contact</a>
+            <a href="index.php">Home</a>
+            <a href="about.php">About</a>
+            <a href="contact.php">Contact</a>
             <a href="library.php">Library</a>
             <div id="profile">
                 <button id="menu-button" class="inv" onclick="toggleMenu()"><img src="resources/user.png" alt="profile-picture" class="profile-picture"></button>
@@ -96,8 +105,7 @@
                     <div id="user-info">
                         <img src="resources/user.png" alt="profile-picture" class="profile-picture">
                         <p>
-                            <!-- UN > Username | UE > User Email -->
-                            <span id="un">Not Signed In</span>
+                        <span id="un"><?php echo isset($_COOKIE['current_user']) ? str_replace("@umak.edu.ph", "", decrypt($_COOKIE['current_user'])) : "Not Signed In";?></span>
                             <!-- <span id="ue">Guest</span> -->
                         </p>
                     </div>
@@ -118,12 +126,30 @@
                     </div>
                     <hr>
                     <div id="log">
-                        <a href="access.php">
-                            <button class="inv in">
-                                <span class="material-symbols-outlined">login</span>
-                                <p>Log In</p>
-                            </button>
-                        </a>
+                    <?php 
+                            if (isset($_COOKIE["current_user"])) {
+                                echo "
+                                <form method='post' action=''>
+                                    <button class='inv out' name='logout'>
+                                        <span class='material-symbols-outlined'>logout</span>
+                                        <p>Log Out</p>
+                                    </button>
+                                </form>";
+                                if (isset($_POST['logout'])) {
+                                    setcookie("current_user", "", time() - 3600, "/");
+                                    header("Location: index.php");
+                                    exit();
+                                }
+                            } else {
+                                echo "
+                                <a href='access.php'>
+                                    <button class='inv in'>
+                                        <span class='material-symbols-outlined'>login</span>
+                                        <p>Log In</p>
+                                    </button>
+                                </a>";
+                            }
+                        ?>
                     </div>
                 </div>
                 <script>
@@ -136,8 +162,18 @@
         </nav>
     </header>
     <main id="access">
+        <?php
+            function notify($message) {
+                if (str_contains($message, "Error")) {
+                    $class = "error";
+                } elseif (str_contains($message, "Success")) {
+                    $class = "success";
+                }
+                echo "<div class='nmsg $class'>$message</div>";
+            }
+        ?>
         <div id="user-log" class="container">
-            <div id="user-log-cover" class=""><span>University of Makati</span></div>
+            <div id="user-log-cover" class="<?php echo isset($_COOKIE['logCoverClass']) ? $_COOKIE['logCoverClass'] : ''; ?>"><span>University of Makati</span></div>
             <script>
                 function slideLogCover() {
                     const logCover = document.getElementById('user-log-cover');
@@ -147,6 +183,7 @@
                     } else {
                         logCover.classList.add("reg");
                     }
+                    document.cookie = "logCoverClass=" + logCover.className + "; path=/";
                 }
             </script>
             <div id="new-user" class="logform">
@@ -154,14 +191,14 @@
                 <hr>
                 <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF'])?>" method="post" id="regis">
                     <label for="remail">UMak Email Address:</label>
-                    <input type="email" name="remail" id="remail" autocomplete="off" placeholder="Enter your UMak email address">
+                    <input type="email" name="remail" id="remail" autocomplete="off" placeholder="Enter your UMak email address" required>
                     <p class="fdesc feg">e.g. juandela.cruz@umak.edu.ph</p>
                     <br>
                     <label for="rusername">Username:</label>
-                    <input type="text" name="rusername" id="rusername" autocomplete="off" placeholder="Enter your username">
+                    <input type="text" name="rusername" id="rusername" autocomplete="off" placeholder="Enter your username" minlength="4" required>
                     <br>
                     <label for="rpassword">Password:</label>
-                    <input type="password" name="rpassword" id="rpassword" autocomplete="off" placeholder="Enter your password">
+                    <input type="password" name="rpassword" id="rpassword" autocomplete="off" placeholder="Enter your password" minlength="6" required>
                     <input type="submit" name="register" value="Register">
                 </form>
                 <p class="fdesc feg cmode">Already have an account? <a href="#" onclick="slideLogCover()">Login</a></p>
@@ -172,10 +209,10 @@
                 <hr>
                 <form action="" method="post" id="login">
                     <label for="lemail">UMak Email Address:</label>
-                    <input type="email" name="lemail" id="lemail" autocomplete="off" placeholder="Enter your UMak email address">
+                    <input type="email" name="lemail" id="lemail" autocomplete="off" placeholder="Enter your UMak email address" required>
                     <br>
                     <label for="rpassword">Password:</label>
-                    <input type="password" name="lpassword" id="lpassword" autocomplete="off" placeholder="Enter your password">
+                    <input type="password" name="lpassword" id="lpassword" autocomplete="off" placeholder="Enter your password" required>
                     <input type="submit" name="login" value="Login">
                 </form>
                 <p class="fdesc feg cmode">Don't have an account? <a href="#" onclick="slideLogCover()">Register</a></p>
